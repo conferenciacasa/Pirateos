@@ -1,0 +1,188 @@
+/*
+   Programa para controlar el coche por ultrasonido
+   - Izquierda
+   - Derecha
+   - Adelante
+   - Atras
+*/
+
+#include <Servo.h>
+
+Servo myservo;  // crea el objeto servo
+
+// Conexion entre el puente H y Arduino
+//rueda derecha
+int IN1Pin = 5;    // PWM
+int IN2Pin = 7;
+//rueda izquierda
+int IN3Pin = 8;
+int IN4Pin = 6;    // PWM
+
+int velocidad = 100; // velocidad de los motores (255 es el maximo)
+
+int distancia;       // distancia del coche al obstaculo
+
+int pos  = 0;        // posicion del servo en grados, de 0 a 180
+int giro = 0;        // direccion de giro del servo, o --> izquierda, 1 --> derecha
+
+// Pines Echo y Trigger del receptor de ultrasonidos
+int EchoPin    = 10;
+int TriggerPin = 11;
+
+void setup()
+{
+
+  myservo.attach(9);  // vincula el servo al pin digital 9
+
+  // Configuramos los pines de los motores como salida
+  pinMode( IN1Pin , OUTPUT);
+  pinMode( IN2Pin , OUTPUT);
+  pinMode( IN3Pin , OUTPUT);
+  pinMode( IN4Pin , OUTPUT);
+
+  parar(); // Detiene el coche
+
+  // Configuramos los pines del receptor de ultrasonidos
+  pinMode(TriggerPin, OUTPUT);
+  pinMode(EchoPin, INPUT);
+
+  // Inicializo el puerto serie a 9600 baudios
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  myservo.write(pos);                     // Mueve el servo del ultrasonido a la posicion "pos"
+  distancia = ping(TriggerPin, EchoPin);  // El sensor devuelve la distancia al obstaculo
+  //Serial.println(distancia);
+
+  if (distancia < 30 ) {                  // ¿El obstaculo esta a menos de 30cm?
+                                          // Si esta a menos de 30cm entonces...
+    if (pos < 90) {                       // Si el angulo del servo es menos de 90 grados, 
+                                          // el obstaculo esta a la derecha del coche                     
+      derecha_();                         // y el coche debe girar a la izquierda marcha atras.
+    } else {                              // Si el angulo del servo es mas de 90 grados,
+                                          // el obstaculo esta a la izquierda del coche
+      izquierda_();                       // y el coche debe girar a la derecha marcha atras.
+    }
+    delay(300);                           // El coche gira durante 300ms...
+    parar();                              // y entonces el coche se detiene.
+  } else {                                // Si el obstaculo esta a 30cm o mas..
+    adelante();                           // El coche se mueve hacia delante...
+                                          // si el coche estaba parado, arranca...
+                                          // y si estaba andando hacia adelante, continua. 
+                                          
+    if ( giro == 0) {                     // Si el servo esta girando hacia la izquierda...                 
+      pos += 30;                          // Calcula la nueva posicion del servo sumando 30 grados.
+      if ( pos > 180 ) {                  // Si el nuevo angulo es mayor de 180 grados...
+        pos = 150;                        // define el nuevo angulo a 150 grados...
+        giro = 1;                         // e invierte el sentido del giro hacia la derecha
+      }
+    } else {                              // Si el servo esta girando hacia la derecha...
+      pos -= 30;                          // Calcula la nueva posicion del servo restando 30 grados.
+      if ( pos < 0 ) {                    // Si el nuevo angulo es menor de 0 grados...
+        pos = 30;                         // define el nuevo angulo a 30 grados...
+        giro = 0;                         // e invierte el sentido del giro hacia la izquierda
+      }
+    }
+    delay(100);                           // El coche avanza hacia adelante 100ms antes de volver a empezar el bloque loop
+  }
+}
+
+
+// Envia un pulso a través del ultrasonido, escucha el eco
+// y calcula a que distancia en cm esta el objeto
+int ping(int TriggerPin, int EchoPin) {
+  long duration, distanceCm;
+
+  digitalWrite(TriggerPin, LOW);         //para generar un pulso limpio ponemos a LOW 4us
+  delayMicroseconds(4);
+  digitalWrite(TriggerPin, HIGH);        //generamos Trigger (disparo) de 10us
+  delayMicroseconds(10);
+  digitalWrite(TriggerPin, LOW);
+
+  duration = pulseIn(EchoPin, HIGH);     //medimos el tiempo entre pulsos, en microsegundos
+
+  distanceCm = duration * 10 / 292 / 2;  //convertimos a distancia, en cm
+  return distanceCm;
+}
+
+// Para los motores de las dos ruedas
+void parar() {
+  //rueda derecha
+  digitalWrite(IN1Pin, LOW);
+  digitalWrite(IN2Pin, LOW);
+  //rueda izquierda
+  digitalWrite(IN4Pin, LOW);
+  digitalWrite(IN3Pin, LOW);
+  //Serial.println("parar");
+}
+
+// Activa los motores de las dos ruedas hacia delante
+void adelante() {
+  //rueda derecha
+  analogWrite(IN1Pin, velocidad);
+  digitalWrite(IN2Pin, LOW);
+  //rueda izquierda
+  analogWrite(IN4Pin, velocidad);
+  digitalWrite(IN3Pin, LOW);
+  //Serial.println("adelante");
+}
+
+// Activa los motores de las dos ruedas hacia atras
+void atras() {
+  //rueda derecha
+  analogWrite(IN1Pin, 255-velocidad);
+  digitalWrite(IN2Pin, HIGH);
+  //rueda izquierda
+  analogWrite(IN4Pin, 255-velocidad);
+  digitalWrite(IN3Pin, HIGH);
+  //Serial.println("atras");
+}
+
+// Activa el motor derecho, para que coche gire a la izquierda
+void izquierda() {
+  //rueda derecha
+  analogWrite(IN1Pin, velocidad);
+  digitalWrite(IN2Pin, LOW);
+  //rueda izquierda
+  analogWrite(IN4Pin, 255 - velocidad);
+  digitalWrite(IN3Pin, HIGH);
+  //Serial.println("derecha");
+}
+
+// Activa el motor derecho hacia atras, para que
+// el coche gire hacia la izquierda marcha atras
+void izquierda_() {
+  //rueda derecha
+  analogWrite(IN1Pin, 255 - velocidad);
+  digitalWrite(IN2Pin, HIGH);
+  //rueda izquierda
+  analogWrite(IN4Pin, 0);
+  digitalWrite(IN3Pin, LOW);
+  //Serial.println("izquierda_");
+}
+
+// Activa el motor izquierdo, para que coche gire a la derecha
+void derecha() {
+  //rueda derecha
+  analogWrite(IN1Pin, 255 - velocidad);
+  digitalWrite(IN2Pin, HIGH);
+  //rueda izquierda
+  analogWrite(IN4Pin, velocidad);
+  digitalWrite(IN3Pin, LOW);
+  //Serial.println("derecha");
+}
+
+// Activa el motor izquierdo hacia atras, para que
+// el coche gire hacia la derecha marcha atras
+void derecha_() {
+  //rueda derecha
+  analogWrite(IN1Pin, 0);
+  digitalWrite(IN2Pin, LOW);
+  //rueda izquierda
+  analogWrite(IN4Pin, 255 - velocidad);
+  digitalWrite(IN3Pin, HIGH);
+  //Serial.println("derecha_");
+}
+ 

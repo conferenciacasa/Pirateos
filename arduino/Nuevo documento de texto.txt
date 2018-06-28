@@ -1,0 +1,105 @@
+#include IRLremote.h
+
+int INTERRUPCION = 0; PIN 2
+
+uint8_t protocolo = 0;
+uint16_t direccion = 0;
+uint32_t tecla = 0;
+uint8_t oldSREG;
+int datoss = tecla, HEX;
+
+void setup(){
+  IRLbeginIR_ALL(INTERRUPCION);
+  Serial.begin(115200);
+  pinMode(13, OUTPUT);
+}
+
+
+void IREvent (uint8_t protocol, uint16_t address, uint32_t command){
+  protocolo = protocol;
+  direccion = address;
+  tecla = command;
+}
+
+void loop(){
+  oldSREG = SREG;
+  cli();
+
+  if(protocolo!=0){
+    Serial.print(Protocolo );
+    Serial.print(protocolo);
+    Serial.print( Direccion );
+    Serial.print(direccion, HEX);
+    Serial.print( Tecla );
+    Serial.println(tecla, HEX);
+    protocolo=0;
+  }
+
+  SREG = oldSREG;
+if(tecla = 5){
+  digitalWrite(13, HIGH);
+}
+if(tecla = 5){
+  digitalWrite(13, HIGH);
+}
+  
+}
+                    case 0x6897:
+                        Serial.println("0");
+                        digitalWrite(4, HIGH);
+                        break;
+                    case 0x30CF:
+                        Serial.println("1");
+                        digitalWrite(5, HIGH);
+                        break;
+                    case 0x18E7:
+                         Serial.println("2");
+                         digitalWrite(6, HIGH);
+                         break;
+                    case 0x7A85:
+                         Serial.println("3");
+                         digitalWrite(7, HIGH);
+                         break;
+                    case 0x10EF:
+                         Serial.println("4"); 
+                              digitalWrite(8, HIGH);
+                         break;
+                    case 0x38C7:
+                         Serial.println("5"); 
+                              digitalWrite(9, HIGH);
+                         break;
+                         case 0x5AA5:
+                         Serial.println("6"); 
+                              digitalWrite(10, HIGH);
+                         break;
+                         case 0x42BD:
+                         digitalWrite(11, HIGH);
+                         Serial.println("7"); 
+                        
+                         break;
+                    case 0x22DD:
+                         Serial.println("I");
+                         s.write(175);
+                         break;
+                    case 0x2FD:
+                         Serial.println("D");
+                         s.write(0);
+                         break;
+                    case 0x906F:
+                         Serial.println("M");
+                         s.write(90);
+                         break;
+                         case 0xA857:
+                         Serial.println("luces/encendidas");
+                         digitalWrite(22, HIGH);
+                         break;
+                         case 0xE01F:
+                         Serial.println("luces/apagadas");
+                         digitalWrite(22, LOW);
+                         break;                                
+                    case 0xC23D:
+                         Serial.println("P/P");
+                         for (int k =0 ; k <12 ; k++) 
+                              digitalWrite(k, LOW);
+                         break;
+                         
